@@ -27,7 +27,8 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   const newProduct = new Product({
     name: req.body.name,
-    price: req.body.price
+    price: req.body.price,
+    image: req.body.image
   })
   await newProduct.save()
   res.json(newProduct)
