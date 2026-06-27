@@ -7,6 +7,9 @@ const orderSchema = new mongoose.Schema({
   postalCode: String,
   phone: String,
   items: Array,
+  subtotal: String,
+  discount: String,
+  shipping: String,
   total: String,
   date: { type: Date, default: Date.now }
 })
