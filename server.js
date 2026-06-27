@@ -6,6 +6,8 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 require('dotenv').config()
 const Product = require('./models/Product')
+const { GoogleGenerativeAI } = require('@google/generative-ai')
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 const app = express()
 app.use(cors())
@@ -44,6 +46,17 @@ app.put('/api/products/:id', async (req, res) => {
     { new: true }
   )
   res.json(updatedProduct)
+})
+app.post('/api/chat', async (req, res) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+    const result = await model.generateContent(req.body.message)
+    const response = result.response.text()
+    res.json({ reply: response })
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ reply: "Sorry, something went wrong." })
+  }
 })
 app.listen(5000, () => {
   console.log('Server running on http://localhost:5000')
