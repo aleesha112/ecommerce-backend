@@ -1,6 +1,7 @@
 const dns = require('dns')
 dns.setServers(['8.8.8.8', '8.8.4.4'])
 
+const Order = require('./models/Order')
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
@@ -58,6 +59,16 @@ app.post('/api/chat', async (req, res) => {
     console.log(error)
     res.status(500).json({ reply: "Sorry, something went wrong." })
   }
+})
+app.post('/api/orders', async (req, res) => {
+  const newOrder = new Order(req.body)
+  await newOrder.save()
+  res.json(newOrder)
+})
+
+app.get('/api/orders', async (req, res) => {
+  const orders = await Order.find().sort({ date: -1 })
+  res.json(orders)
 })
 app.listen(5000, () => {
   console.log('Server running on http://localhost:5000')
