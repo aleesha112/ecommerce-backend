@@ -30,7 +30,8 @@ app.post('/api/products', async (req, res) => {
   const newProduct = new Product({
     name: req.body.name,
     price: req.body.price,
-    image: req.body.image
+    image: req.body.image,
+    rating: req.body.rating || 4
   })
   await newProduct.save()
   res.json(newProduct)
@@ -42,7 +43,7 @@ app.delete('/api/products/:id', async (req, res) => {
 app.put('/api/products/:id', async (req, res) => {
   const updatedProduct = await Product.findByIdAndUpdate(
     req.params.id,
-    { name: req.body.name, price: req.body.price, image: req.body.image },
+    { name: req.body.name, price: req.body.price, image: req.body.image, rating: req.body.rating },
     { new: true }
   )
   res.json(updatedProduct)
