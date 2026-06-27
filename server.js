@@ -70,6 +70,10 @@ app.get('/api/orders', async (req, res) => {
   const orders = await Order.find().sort({ date: -1 })
   res.json(orders)
 })
+app.delete('/api/orders/:id', async (req, res) => {
+  await Order.findByIdAndDelete(req.params.id)
+  res.json({ message: 'Order deleted' })
+})
 app.listen(5000, () => {
   console.log('Server running on http://localhost:5000')
 })
