@@ -11,6 +11,7 @@ const orderSchema = new mongoose.Schema({
   discount: String,
   shipping: String,
   total: String,
+  status: { type: String, default: "Processing" },
   date: { type: Date, default: Date.now }
 })
 

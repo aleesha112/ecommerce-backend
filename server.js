@@ -77,6 +77,14 @@ app.delete('/api/orders/:id', async (req, res) => {
   await Order.findByIdAndDelete(req.params.id)
   res.json({ message: 'Order deleted' })
 })
+app.put('/api/orders/:id/status', async (req, res) => {
+  const updatedOrder = await Order.findByIdAndUpdate(
+    req.params.id,
+    { status: req.body.status },
+    { new: true }
+  )
+  res.json(updatedOrder)
+})
 app.listen(5000, () => {
   console.log('Server running on http://localhost:5000')
 })
