@@ -69,6 +69,11 @@ app.post('/api/chat', async (req, res) => {
     res.status(500).json({ reply: "Sorry, something went wrong." })
   }
 })
+app.post('/api/orders', async (req, res) => {
+  const newOrder = new Order(req.body)
+  await newOrder.save()
+  res.json(newOrder)
+})
 app.get('/api/orders', async (req, res) => {
   const orders = await Order.find().sort({ date: -1 })
   res.json(orders)
