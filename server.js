@@ -49,10 +49,19 @@ app.put('/api/products/:id', async (req, res) => {
   )
   res.json(updatedProduct)
 })
+
 app.post('/api/chat', async (req, res) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
-    const result = await model.generateContent(req.body.message)
+
+    const systemInstruction = `You are a helpful customer support assistant for an online store called "MyStore" (e-commerce website). 
+    The store sells electronics including smartphones, laptops, earbuds, power banks, chargers, and bluetooth speakers.
+    When greeted, briefly introduce yourself and the store, then ask how you can help.
+    Only answer questions related to the store, its products, shipping, discounts, or shopping help.
+    If asked something unrelated to the store, politely redirect the conversation back to how you can help with their shopping.
+    Keep responses friendly, concise, and helpful.`
+
+    const result = await model.generateContent(`${systemInstruction}\n\nUser message: ${req.body.message}`)
     const response = result.response.text()
     res.json({ reply: response })
   } catch (error) {
@@ -60,12 +69,6 @@ app.post('/api/chat', async (req, res) => {
     res.status(500).json({ reply: "Sorry, something went wrong." })
   }
 })
-app.post('/api/orders', async (req, res) => {
-  const newOrder = new Order(req.body)
-  await newOrder.save()
-  res.json(newOrder)
-})
-
 app.get('/api/orders', async (req, res) => {
   const orders = await Order.find().sort({ date: -1 })
   res.json(orders)
