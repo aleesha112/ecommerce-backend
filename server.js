@@ -78,8 +78,16 @@ app.post('/api/orders', async (req, res) => {
   res.json(newOrder)
 })
 app.get('/api/orders', async (req, res) => {
-  const orders = await Order.find().sort({ date: -1 })
-  res.json(orders)
+  const token = req.headers.authorization?.split(' ')[1]
+  if (!token) return res.json([])
+
+  try {
+    const decoded = jwt.verify(token, 'secret123')
+    const orders = await Order.find({ userId: decoded.id }).sort({ date: -1 })
+    res.json(orders)
+  } catch {
+    res.json([])
+  }
 })
 app.delete('/api/orders/:id', async (req, res) => {
   await Order.findByIdAndDelete(req.params.id)
