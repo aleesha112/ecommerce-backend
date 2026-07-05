@@ -1,15 +1,8 @@
-const nodemailer = require('nodemailer')
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-})
 const otpStore = new Map()
 const dns = require('dns')
 dns.setServers(['8.8.8.8', '8.8.4.4'])
+const { Resend } = require('resend')
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 const Order = require('./models/Order')
 const express = require('express')
@@ -180,8 +173,8 @@ app.post('/api/auth/send-otp', async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   otpStore.set(email, { otp, expiry: Date.now() + 10 * 60 * 1000 })
 
-  await transporter.sendMail({
-    from: process.env.GMAIL_USER,
+  await resend.emails.send({
+    from: 'onboarding@resend.dev',
     to: email,
     subject: 'MyStore - Email Verification OTP',
     html: `
@@ -231,8 +224,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   otpStore.set(`reset_${email}`, { otp, expiry: Date.now() + 10 * 60 * 1000 })
 
-  await transporter.sendMail({
-    from: process.env.GMAIL_USER,
+  await resend.emails.send({
+    from: 'onboarding@resend.dev',
     to: email,
     subject: 'MyStore - Password Reset OTP',
     html: `
