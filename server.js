@@ -1,3 +1,13 @@
+const nodemailer = require('nodemailer')
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+})
+const otpStore = new Map()
 const dns = require('dns')
 dns.setServers(['8.8.8.8', '8.8.4.4'])
 
@@ -113,10 +123,13 @@ app.post('/api/auth/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10)
 
     const newUser = new User({
-      name,
-      email,
-      password: hashedPassword
-    })
+  name,
+  email,
+  password: hashedPassword,
+  role: req.body.role || 'user'
+})
+
+  
 
     await newUser.save()
 
@@ -155,6 +168,99 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Server error' })
   }
+})
+app.post('/api/auth/send-otp', async (req, res) => {
+  const { email } = req.body
+  
+  const existingUser = await User.findOne({ email })
+  if (existingUser) {
+    return res.status(400).json({ message: 'Email already registered' })
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString()
+  otpStore.set(email, { otp, expiry: Date.now() + 10 * 60 * 1000 })
+
+  await transporter.sendMail({
+    from: process.env.GMAIL_USER,
+    to: email,
+    subject: 'MyStore - Email Verification OTP',
+    html: `
+      <div style="font-family: Arial; max-width: 500px; margin: 0 auto; padding: 30px; background: #f8f8f8; border-radius: 10px;">
+        <h2 style="color: #1a1a2e;">Verify Your Email</h2>
+        <p>Your OTP for MyStore registration:</p>
+        <h1 style="color: #f0a500; font-size: 36px; letter-spacing: 8px;">${otp}</h1>
+        <p style="color: #888;">This OTP expires in 10 minutes.</p>
+      </div>
+    `
+  })
+
+  res.json({ message: 'OTP sent successfully' })
+})
+app.post('/api/auth/verify-otp', async (req, res) => {
+  const { name, email, password, otp } = req.body
+
+  const stored = otpStore.get(email)
+  if (!stored) {
+    return res.status(400).json({ message: 'OTP expired or not found' })
+  }
+  if (stored.otp !== otp) {
+    return res.status(400).json({ message: 'Invalid OTP' })
+  }
+  if (Date.now() > stored.expiry) {
+    otpStore.delete(email)
+    return res.status(400).json({ message: 'OTP expired' })
+  }
+
+  otpStore.delete(email)
+
+  const hashedPassword = await bcrypt.hash(password, 10)
+  const newUser = new User({ name, email, password: hashedPassword, role: req.body.role || 'user' })
+  await newUser.save()
+
+  const token = jwt.sign({ id: newUser._id, role: newUser.role }, 'secret123', { expiresIn: '7d' })
+  res.json({ token, user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role } })
+})
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body
+
+  const user = await User.findOne({ email })
+  if (!user) {
+    return res.status(400).json({ message: 'Email not registered' })
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString()
+  otpStore.set(`reset_${email}`, { otp, expiry: Date.now() + 10 * 60 * 1000 })
+
+  await transporter.sendMail({
+    from: process.env.GMAIL_USER,
+    to: email,
+    subject: 'MyStore - Password Reset OTP',
+    html: `
+      <div style="font-family: Arial; max-width: 500px; margin: 0 auto; padding: 30px; background: #f8f8f8; border-radius: 10px;">
+        <h2 style="color: #1a1a2e;">Reset Your Password</h2>
+        <p>Your OTP for password reset:</p>
+        <h1 style="color: #f0a500; font-size: 36px; letter-spacing: 8px;">${otp}</h1>
+        <p style="color: #888;">This OTP expires in 10 minutes.</p>
+      </div>
+    `
+  })
+
+  res.json({ message: 'OTP sent to your email' })
+})
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { email, otp, newPassword } = req.body
+
+  const stored = otpStore.get(`reset_${email}`)
+  if (!stored || stored.otp !== otp || Date.now() > stored.expiry) {
+    return res.status(400).json({ message: 'Invalid or expired OTP' })
+  }
+
+  otpStore.delete(`reset_${email}`)
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10)
+  await User.findOneAndUpdate({ email }, { password: hashedPassword })
+
+  res.json({ message: 'Password reset successfully' })
 })
 app.listen(5000, () => {
   console.log('Server running on http://localhost:5000')
