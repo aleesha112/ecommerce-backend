@@ -1,14 +1,19 @@
-const otpStore = new Map()
 const dns = require('dns')
 dns.setServers(['8.8.8.8', '8.8.4.4'])
-const { Resend } = require('resend')
-const resend = new Resend(process.env.RESEND_API_KEY)
+
+require('dotenv').config()
+
+const Brevo = require('@getbrevo/brevo')
+const brevoClient = Brevo.ApiClient.instance
+brevoClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY
+const emailApi = new Brevo.TransactionalEmailsApi()
+
+const otpStore = new Map()
 
 const Order = require('./models/Order')
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
-require('dotenv').config()
 const Product = require('./models/Product')
 const { GoogleGenerativeAI } = require('@google/generative-ai')
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
@@ -173,11 +178,11 @@ app.post('/api/auth/send-otp', async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   otpStore.set(email, { otp, expiry: Date.now() + 10 * 60 * 1000 })
 
-  await resend.emails.send({
-    from: 'onboarding@resend.dev',
-    to: email,
+  await emailApi.sendTransacEmail({
+    sender: { email: 'noreply@mystore.com', name: 'MyStore' },
+    to: [{ email: email }],
     subject: 'MyStore - Email Verification OTP',
-    html: `
+    htmlContent: `
       <div style="font-family: Arial; max-width: 500px; margin: 0 auto; padding: 30px; background: #f8f8f8; border-radius: 10px;">
         <h2 style="color: #1a1a2e;">Verify Your Email</h2>
         <p>Your OTP for MyStore registration:</p>
@@ -224,11 +229,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   otpStore.set(`reset_${email}`, { otp, expiry: Date.now() + 10 * 60 * 1000 })
 
-  await resend.emails.send({
-    from: 'onboarding@resend.dev',
-    to: email,
+  await emailApi.sendTransacEmail({
+    sender: { email: 'noreply@mystore.com', name: 'MyStore' },
+    to: [{ email: email }],
     subject: 'MyStore - Password Reset OTP',
-    html: `
+    htmlContent: `
       <div style="font-family: Arial; max-width: 500px; margin: 0 auto; padding: 30px; background: #f8f8f8; border-radius: 10px;">
         <h2 style="color: #1a1a2e;">Reset Your Password</h2>
         <p>Your OTP for password reset:</p>
