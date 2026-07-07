@@ -1,12 +1,12 @@
 const dns = require('dns')
 dns.setServers(['8.8.8.8', '8.8.4.4'])
 
-require('dotenv').config()
 
-const Brevo = require('@getbrevo/brevo')
-const brevoClient = Brevo.ApiClient.instance
-brevoClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY
-const emailApi = new Brevo.TransactionalEmailsApi()
+
+const SibApiV3Sdk = require('@getbrevo/brevo')
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi()
+apiInstance.authentications['api-key'].apiKey = process.env.BREVO_API_KEY
+const emailApi = apiInstance
 
 const otpStore = new Map()
 
