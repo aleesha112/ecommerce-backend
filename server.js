@@ -1,10 +1,8 @@
 const dns = require('dns')
 dns.setServers(['8.8.8.8', '8.8.4.4'])
 
-const { TransactionalEmailsApi, SendSmtpEmail, ApiClient } = require('@getbrevo/brevo')
-const brevoApiClient = ApiClient.instance
-brevoApiClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY
-const emailApi = new TransactionalEmailsApi()
+const { Brevo } = require('@getbrevo/brevo')
+const brevoClient = new Brevo({ apiKey: process.env.BREVO_API_KEY })
 
 const otpStore = new Map()
 
@@ -176,19 +174,19 @@ app.post('/api/auth/send-otp', async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   otpStore.set(email, { otp, expiry: Date.now() + 10 * 60 * 1000 })
 
-  const emailData = new SendSmtpEmail()
-  emailData.sender = { email: 'noreply@mystore.com', name: 'MyStore' }
-  emailData.to = [{ email: email }]
-  emailData.subject = 'MyStore - Email Verification OTP'
-  emailData.htmlContent = `
-    <div style="font-family: Arial; max-width: 500px; margin: 0 auto; padding: 30px; background: #f8f8f8; border-radius: 10px;">
-      <h2 style="color: #1a1a2e;">Verify Your Email</h2>
-      <p>Your OTP for MyStore registration:</p>
-      <h1 style="color: #f0a500; font-size: 36px; letter-spacing: 8px;">${otp}</h1>
-      <p style="color: #888;">This OTP expires in 10 minutes.</p>
-    </div>
-  `
-  await emailApi.sendTransacEmail(emailData)
+  await brevoClient.transactionalEmails.sendTransacEmail({
+    sender: { email: 'noreply@mystore.com', name: 'MyStore' },
+    to: [{ email: email }],
+    subject: 'MyStore - Email Verification OTP',
+    htmlContent: `
+      <div style="font-family: Arial; max-width: 500px; margin: 0 auto; padding: 30px; background: #f8f8f8; border-radius: 10px;">
+        <h2 style="color: #1a1a2e;">Verify Your Email</h2>
+        <p>Your OTP for MyStore registration:</p>
+        <h1 style="color: #f0a500; font-size: 36px; letter-spacing: 8px;">${otp}</h1>
+        <p style="color: #888;">This OTP expires in 10 minutes.</p>
+      </div>
+    `
+  })
 
   res.json({ message: 'OTP sent successfully' })
 })
@@ -227,19 +225,19 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   otpStore.set(`reset_${email}`, { otp, expiry: Date.now() + 10 * 60 * 1000 })
 
-  const emailData = new SendSmtpEmail()
-  emailData.sender = { email: 'noreply@mystore.com', name: 'MyStore' }
-  emailData.to = [{ email: email }]
-  emailData.subject = 'MyStore - Password Reset OTP'
-  emailData.htmlContent = `
-    <div style="font-family: Arial; max-width: 500px; margin: 0 auto; padding: 30px; background: #f8f8f8; border-radius: 10px;">
-      <h2 style="color: #1a1a2e;">Reset Your Password</h2>
-      <p>Your OTP for password reset:</p>
-      <h1 style="color: #f0a500; font-size: 36px; letter-spacing: 8px;">${otp}</h1>
-      <p style="color: #888;">This OTP expires in 10 minutes.</p>
-    </div>
-  `
-  await emailApi.sendTransacEmail(emailData)
+  await brevoClient.transactionalEmails.sendTransacEmail({
+    sender: { email: 'noreply@mystore.com', name: 'MyStore' },
+    to: [{ email: email }],
+    subject: 'MyStore - Password Reset OTP',
+    htmlContent: `
+      <div style="font-family: Arial; max-width: 500px; margin: 0 auto; padding: 30px; background: #f8f8f8; border-radius: 10px;">
+        <h2 style="color: #1a1a2e;">Reset Your Password</h2>
+        <p>Your OTP for password reset:</p>
+        <h1 style="color: #f0a500; font-size: 36px; letter-spacing: 8px;">${otp}</h1>
+        <p style="color: #888;">This OTP expires in 10 minutes.</p>
+      </div>
+    `
+  })
 
   res.json({ message: 'OTP sent to your email' })
 })
