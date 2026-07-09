@@ -160,7 +160,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
     otpStore.set(email, { otp, expiry: Date.now() + 10 * 60 * 1000 })
     await brevoClient.transactionalEmails.sendTransacEmail({
-      sender: { email: 'noreply@mystore.com', name: 'MyStore' },
+      sender: { email: 'aleeshaafzal112@gmail.com', name: 'MyStore' },
       to: [{ email: email }],
       subject: 'MyStore - Email Verification OTP',
       htmlContent: `
@@ -210,7 +210,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
     otpStore.set(`reset_${email}`, { otp, expiry: Date.now() + 10 * 60 * 1000 })
     await brevoClient.transactionalEmails.sendTransacEmail({
-      sender: { email: 'noreply@mystore.com', name: 'MyStore' },
+      sender: { email: 'aleeshaafzal112@gmail.com', name: 'MyStore' },
       to: [{ email: email }],
       subject: 'MyStore - Password Reset OTP',
       htmlContent: `
